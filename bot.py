@@ -22,7 +22,7 @@ async def mux_uploader():
             status_msg = await message.reply("📥 **Step 1: Downloading from Telegram...**")
             file_path = await message.download()
 
-            await status_msg.edit("🚀 **Step 2: Pushing to Mux (High Speed)...**")
+            await status_msg.edit("🚀 **Step 2: Pushing to Mux (Direct Upload)...**")
             # Create Direct Upload slot on Mux
             r = requests.post(
                 "https://api.mux.com/video/v1/uploads",
@@ -30,7 +30,7 @@ async def mux_uploader():
                 json={
                     "new_asset_settings": {
                         "playback_policy": ["public"],
-                        "video_quality": "basic" # Basic allows free 720p ABR
+                        "video_quality": "basic" 
                     },
                     "cors_origin": "*"
                 }
@@ -39,14 +39,14 @@ async def mux_uploader():
             upload_url = r["data"]["url"]
             upload_id = r["data"]["id"]
 
-            # Actual file upload
+            # Actual file upload to Mux
             with open(file_path, "rb") as f:
                 requests.put(upload_url, data=f)
 
-            # Cleanup local GitHub storage immediately
+            # Cleanup local GitHub storage immediately to save space
             os.remove(file_path)
 
-            await status_msg.edit("⚙️ **Step 3: Mux is creating your Data-Saving Player...**")
+            await status_msg.edit("⚙️ **Step 3: Generating your Player...**")
             
             # Wait for Mux to finalize the Playback ID
             playback_id = None
@@ -58,13 +58,13 @@ async def mux_uploader():
                     playback_id = asset_info["data"]["playback_ids"][0]["id"]
                 await asyncio.sleep(5)
 
-            # Use the official Mux Player URL for full controls
+            # The official Mux Player URL
             player_url = f"https://player.mux.com/{playback_id}"
             
             await status_msg.edit(
                 f"✅ **Lecture Ready!**\n\n"
                 f"📺 **[OPEN PLAYER]({player_url})**\n\n"
-                f"💡 **Tip:** Click the Gear ⚙️ in the player to select **240p** and save your internet data!"
+                f"💡 **Data Saver:** Click ⚙️ in the player and select **240p** or **360p**."
             )
 
         except Exception as e:
@@ -79,9 +79,8 @@ async def add_to_queue(client, message):
 
 async def main():
     async with app:
-        # Start the background uploader task
         asyncio.create_task(mux_uploader())
-        print("Userbot is live. Forward a video to yourself to start.")
+        print("Bot is live. Forward a video to yourself.")
         await asyncio.Event().wait()
 
 app.run(main())
